@@ -1,9 +1,11 @@
 import {Link} from "react-router-dom";
 import {useAuth} from "../context/AuthContext.tsx";
 import ViewContainer from "./ViewContainer.tsx";
+import {useCalendar} from "../hooks/useCalendar.ts";
 
 function Header() {
     const {user, logout} = useAuth();
+    const {date, time} = useCalendar()
 
     return (
         <div className="bg-gray-900/50">
@@ -26,6 +28,10 @@ function Header() {
                                 onClick={logout}
                                 className="px-3 py-1 text-sm border-2 rounded-md hover:text-gray-200 hover:border-gray-200"
                             >Log Out</button>
+                            <div>
+                                {date} <br/>
+                                {time}
+                            </div>
                         </div>
                     </nav>
                 </header>

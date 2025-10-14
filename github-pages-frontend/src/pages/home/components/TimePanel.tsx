@@ -1,30 +1,23 @@
-import {useEffect, useState} from "react";
+import {useClock} from "../../../hooks/useClock.ts";
+import {useCalendar} from "../../../hooks/useCalendar.ts";
+
 
 function TimePanel() {
 
-    function getClock() {
-        const date = new Date();
-        const hours = String(date.getHours()).padStart(2, "0");
-        const minutes = String(date.getMinutes()).padStart(2, "0");
-        const seconds = String(date.getSeconds()).padStart(2, "0");
-
-        return `${hours}:${minutes}:${seconds}`;
-    }
-
-    const [time, setTime] = useState(getClock());
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTime(getClock());
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
+    const time = useClock();
+    const {date} = useCalendar();
 
     return (
-        <>
-            <h1>{time}</h1>
-        </>
+
+        <div className="
+            text-white text-5xl
+            grid place-items-center
+            py-4
+            ">
+            <h1 className="py-1">{date}</h1>
+            <h1 className="py-1">{time}</h1>
+        </div>
+
     )
 }
 

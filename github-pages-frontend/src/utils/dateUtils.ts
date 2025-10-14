@@ -22,5 +22,5 @@ export function getDateString() {
     const weekdayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRID", "SAT"];
     const weekday = weekdayNames[date.getDay()];
 
-    return `${year}-${month}-${day} ${weekday}`;
+    return `${year}. ${month}. ${day}. ${weekday}`;
 }

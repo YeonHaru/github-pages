@@ -9,13 +9,15 @@ function TimePanel() {
 
     return (
 
-        <div className="
-            text-white text-5xl
-            grid place-items-center
+        <div className="h-full flex items-center justify-center">
+            <div className="
+            text-white
             py-4
+            text-center
             ">
-            <h1 className="py-1">{date}</h1>
-            <h1 className="py-1">{time}</h1>
+                <p className="py-1 text-3xl">{date}</p>
+                <p className="py-1 text-7xl">{time}</p>
+            </div>
         </div>
 
     )

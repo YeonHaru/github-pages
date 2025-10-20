@@ -37,9 +37,9 @@ export function useWeather() {
                 const lon = position.coords.longitude;
 
                 try {
-                    const apiKey = "dc1d98df26190b0cc5b4c232aad250f7"; //
+                    const API_KEY = "dc1d98df26190b0cc5b4c232aad250f7"; //
                     const res = await fetch(
-                        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+                        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
                     );
                     if (!res.ok) throw new Error("날씨 정보를 불러오지 못했습니다.");
                     const data = await res.json();

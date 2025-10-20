@@ -26,7 +26,7 @@ function AdvicePanel() {
         };
     }, []);
 
-    if (loading) return <p>불러오는 중...</p>;
+    if (loading) return <p>불러오는 중...</p> ;
     if (!advice) return <p>데이터 없음</p>;
 
     return (

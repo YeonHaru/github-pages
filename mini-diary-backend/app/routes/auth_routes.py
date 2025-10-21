@@ -1,4 +1,5 @@
 # auth_routes.py
+import os
 from flask import Blueprint, request, jsonify, current_app, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import find_user_by_user_id, insert_user
@@ -11,16 +12,44 @@ import re
 
 auth_bp = Blueprint("auth", __name__)
 
-# ===== JWT 설정 =====
+# JWT 설정
 JWT_ALG = "HS256"
 ACCESS_EXPIRES_MIN = 15      # 액세스 토큰 만료(분)
 REFRESH_EXPIRES_DAYS = 7     # 리프레시 토큰 만료(일)
 BEARER_RE = re.compile(r"^Bearer\s+(.+)$", re.IGNORECASE)
 
+# 인메모리 토큰 블랙리스트 (로그아웃 처리용)
+REVOKED_TOKEN: dict[str, int] = {}
 
-# 앱 설정의 SECRET_KEY 사용(운영에선 반드시 환경변수/설정으로 지정)
+def _cleanup_revoked():
+    """만료된 항목 주기적으로 정리"""
+    if not REVOKED_TOKEN:
+        return
+    now = int(datetime.now(timezone.utc).timestamp())
+    expired_keys = [k for k, exp in REVOKED_TOKEN.items() if exp <= now]
+    for k in expired_keys:
+        REVOKED_TOKEN.pop(k, None)
+
+def _is_revoked(token: str) -> bool:
+    """블랙리스트 여부 확인"""
+    _cleanup_revoked()
+    exp = REVOKED_TOKEN.get(token)
+    if exp is None:
+        return False
+    # 만료전일경우 사용 금지
+    return int(datetime.now(timezone.utc).timestamp()) < exp
+
+
+# 앱 설정의 SECRET_KEY 사용
 def _get_secret() -> str:
+    # 1) app.config 에서 우선 시도
     secret = current_app.config.get("SECRET_KEY")
+
+    # 2) 없으면 환경변수에서 시도
+    if not secret:
+        secret = os.getenv("SECRET_KEY")
+        if secret:
+            current_app.config["SECRET_KEY"] = secret
     if not secret:
         # 개발 편의용 디폴트. 운영에서는 반드시 안전한 값으로 설정하세요.
         secret = "CHANGE_ME_IN_PRODUCTION"
@@ -72,7 +101,7 @@ def _get_bearer_token_from_header() -> str | None:
     return m.group(1) if m else None
 
 
-# ===== 보호 라우트 데코레이터 =====
+# 보호 라우트 데코레이터
 def jwt_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -99,7 +128,7 @@ def jwt_required(fn):
     return wrapper
 
 
-# ===== 회원가입 =====
+# 회원가입
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json(silent=True) or {}
@@ -144,7 +173,7 @@ def register():
     }), 201
 
 
-# ===== 로그인 (JWT 발급) =====
+# 로그인
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
@@ -159,7 +188,7 @@ def login():
     if not user:
         return jsonify({"error": "존재하지 않는 사용자입니다."}), 401
 
-    stored_hash = user[2]  # (user_id, username, password_hash, email, created_at, updated_at)
+    stored_hash = user[2]
     if not check_password_hash(stored_hash, password):
         return jsonify({"error": "비밀번호가 일치하지 않습니다."}), 401
 
@@ -178,13 +207,10 @@ def login():
     }), 200
 
 
-# ===== 액세스 토큰 리프레시 =====
+# 액세스 토큰 리프레시
 @auth_bp.route("/refresh", methods=["POST"])
 def refresh():
-    """
-    Authorization: Bearer <refresh_token>
-    또는 JSON 바디로 {"refresh_token": "..."} 지원
-    """
+
     token = _get_bearer_token_from_header()
     if not token:
         body = request.get_json(silent=True) or {}
@@ -211,7 +237,7 @@ def refresh():
     }), 200
 
 
-# ===== 보호된 예시 엔드포인트 =====
+# 보호된 예시 엔드포인트
 @auth_bp.route("/me", methods=["GET"])
 @jwt_required
 def me():
